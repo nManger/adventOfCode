@@ -1,0 +1,15 @@
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\bin\Debug\net6.0\day16.exe
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\bin\Debug\net6.0\day16.deps.json
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\bin\Debug\net6.0\day16.runtimeconfig.json
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\bin\Debug\net6.0\day16.dll
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\bin\Debug\net6.0\day16.pdb
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\day16.csproj.AssemblyReference.cache
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\day16.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\day16.AssemblyInfoInputs.cache
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\day16.AssemblyInfo.cs
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\day16.csproj.CoreCompileInputs.cache
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\day16.dll
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\refint\day16.dll
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\day16.pdb
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\day16.genruntimeconfig.cache
+C:\Users\natas\Documents\codeLearning\adventOfCode\2020\day16\obj\Debug\net6.0\ref\day16.dll
