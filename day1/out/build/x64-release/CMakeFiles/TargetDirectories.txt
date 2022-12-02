@@ -1,0 +1,3 @@
+C:/Users/natas/Documents/codeLearning/adventOfCode/day1/out/build/x64-release/CMakeFiles/day1.dir
+C:/Users/natas/Documents/codeLearning/adventOfCode/day1/out/build/x64-release/CMakeFiles/edit_cache.dir
+C:/Users/natas/Documents/codeLearning/adventOfCode/day1/out/build/x64-release/CMakeFiles/rebuild_cache.dir
