@@ -119,13 +119,15 @@ Cube createCubeFromMap(std::vector<std::string> map, int cubeShape)
 		puzzleCube.edgeDirectionChanges.at(face) = { right,right,left,right };
 
 		//Front
+		face = Front;
 		x = 2 * delta; y = delta;
 		puzzleCube.cubeFaceCoordinateOffset.at(face) = { x,y };
 		puzzleCube.cubeFaces.at(face) = getCubeFace(map, x, y, delta);
 		puzzleCube.faceUpSideDirection.at(face) = up;
 		puzzleCube.edgeDirectionChanges.at(face) = { down,down,left,up };
 
-		//Down
+		//Bottom
+		face = Bottom;
 		x = 2 * delta ; y = 2*delta;
 		puzzleCube.cubeFaceCoordinateOffset.at(face) = { x,y };
 		puzzleCube.cubeFaces.at(face) = getCubeFace(map, x, y, delta);
@@ -133,10 +135,12 @@ Cube createCubeFromMap(std::vector<std::string> map, int cubeShape)
 		puzzleCube.edgeDirectionChanges.at(face) = { right,up,up,up };
 
 		//Right
+		face = Right;
 		x = 3 * delta ; y = 2 * delta;
 		puzzleCube.cubeFaceCoordinateOffset.at(face) = { x,y };
 		puzzleCube.cubeFaces.at(face) = getCubeFace(map, x, y, delta);
 		puzzleCube.faceUpSideDirection.at(face) = right;
+		puzzleCube.localToGlobalRotationOffset.at(face) = 1;
 		puzzleCube.edgeDirectionChanges.at(face) = { left,right,left,left };
 
 	}
@@ -148,14 +152,15 @@ Cube createCubeFromMap(std::vector<std::string> map, int cubeShape)
 		puzzleCube.cubeFaceCoordinateOffset.at(face) = { x,y };
 		puzzleCube.cubeFaces.at(face) = getCubeFace(map, x, y, delta);
 		puzzleCube.faceUpSideDirection.at(face) = up;
-		puzzleCube.edgeDirectionChanges.at(face) = { down,down,right,right };
+		puzzleCube.edgeDirectionChanges.at(face) = { right,down,right,right };
 
-		//Left
-		face = Left;
-		x = 0; y = 2*delta;
+		//Right
+		face = Right;
+		x = 2 * delta; y = 0;
 		puzzleCube.cubeFaceCoordinateOffset.at(face) = { x,y };
 		puzzleCube.cubeFaces.at(face) = getCubeFace(map, x, y, delta);
 		puzzleCube.faceUpSideDirection.at(face) = left;
+		puzzleCube.localToGlobalRotationOffset.at(face) = -1;
 		puzzleCube.edgeDirectionChanges.at(face) = { left,left,left,up };
 
 		//Front
@@ -174,19 +179,22 @@ Cube createCubeFromMap(std::vector<std::string> map, int cubeShape)
 		puzzleCube.faceUpSideDirection.at(face) = up;
 		puzzleCube.edgeDirectionChanges.at(face) = { left,left,left,up };
 
-		//left
+		//Left
 		face = Left;
 		x = 0; y = 2 * delta;
 		puzzleCube.cubeFaceCoordinateOffset.at(face) = { x,y };
 		puzzleCube.cubeFaces.at(face) = getCubeFace(map, x, y, delta);
 		puzzleCube.faceUpSideDirection.at(face) = left;
+		puzzleCube.localToGlobalRotationOffset.at(face) = -1;
 		puzzleCube.edgeDirectionChanges.at(face) = { right,down,right,right };
 
-		//Right
+		//Back
+		face = Back;
 		x = 0 ; y = 3 * delta;
 		puzzleCube.cubeFaceCoordinateOffset.at(face) = { x,y };
 		puzzleCube.cubeFaces.at(face) = getCubeFace(map, x, y, delta);
 		puzzleCube.faceUpSideDirection.at(face) = left;
+		puzzleCube.localToGlobalRotationOffset.at(face) = -1;
 		puzzleCube.edgeDirectionChanges.at(face) = {up ,down,down,up };
 
 	}
@@ -283,6 +291,203 @@ Cube createCubeFromMap(std::vector<std::string> map)
 }
 */
 
+
+long long walkCube(const Cube& mapCube, const std::vector<std::variant<int, char>>& directions)
+{
+	auto [xglobal, yglobal] = mapCube.cubeFaceCoordinateOffset[Top];
+	int delta = mapCube.cubeFaces[Top].size();
+	int x = 0, y = 0;
+	Cardinal heading = right, nextHeading = heading;
+	Side currentSide = Top , nextSide = currentSide;
+	bool changeSide = false;
+	
+	for (auto& direction : directions)
+	{
+		//std::cout << x << " " << y << " " << heading << "\n";
+		//change heading
+		if (std::holds_alternative<char>(direction))
+		{
+			if (std::get<char>(direction) == 'R')
+			{
+				heading = (Cardinal)modulo(heading + 1, CARDINAL_SIZE);
+			}
+			else
+			{
+				heading = (Cardinal)modulo(heading - 1, CARDINAL_SIZE);
+			}
+			nextHeading = heading;
+		}
+		else
+		{
+			int dist = std::get<int>(direction);
+			int tmpX, tmpY;
+			
+
+			for (int i = 0; i < dist; ++i)
+			{
+				changeSide = false;
+
+				if (heading == right)
+				{
+					//get next possible position
+					if (x + 1 == delta) //we reached end of current face 
+					{
+						changeSide = true;
+						nextSide = cubeSideEdges.at(currentSide).at(modulo(heading - mapCube.localToGlobalRotationOffset.at(currentSide), CARDINAL_SIZE));
+						nextHeading = mapCube.edgeDirectionChanges.at(currentSide).at(heading);
+						if (nextHeading == right) { tmpX = 0; tmpY = y; }
+						else if (nextHeading == left) { tmpX = delta - 1, tmpY = delta - 1 - y; }
+						else if (nextHeading == up) { tmpX = y; tmpY = delta - 1; }
+						else { tmpX = delta - 1 - y; tmpY = 0; } //down
+					}
+					else //continue on current face
+					{ 
+						tmpX = x + 1; tmpY = y; 
+					}
+					
+					//check if next position is allowed, stop if not
+					if (mapCube.cubeFaces.at(nextSide)[tmpY][tmpX] == '#'){
+						//reset next side as we stay on current side after all
+						nextSide = currentSide;
+						break;
+						}
+					else 
+					{ 
+						x = tmpX; y = tmpY;
+						if (changeSide)
+						{
+							currentSide = nextSide;
+							heading = nextHeading;
+						}
+					}
+					
+				}
+				else if(heading == left)
+				{
+					//get next position
+					//if we reached side of current face, get next one
+					if (x - 1 < 0) 
+					{ 
+						changeSide = true;
+						nextSide = cubeSideEdges.at(currentSide).at(modulo(heading - mapCube.localToGlobalRotationOffset.at(currentSide), CARDINAL_SIZE));
+						nextHeading = mapCube.edgeDirectionChanges.at(currentSide).at(heading);
+						if (nextHeading == right) { tmpX = 0; tmpY = delta - 1 - y; }
+						else if (nextHeading == left) { tmpX = delta - 1, tmpY = y; }
+						else if (nextHeading == up) { tmpX = delta - 1 - y; tmpY = delta - 1; }
+						else { tmpX = y; tmpY = 0; } //down
+					}
+					//continue on current face
+					else 
+					{
+						tmpX = x - 1;
+						tmpY = y;
+					}	
+
+					//check if next position is allowed, else stop walking
+					if (mapCube.cubeFaces.at(nextSide)[tmpY][tmpX] == '#')
+					{
+						nextSide = currentSide;
+						break;
+					}
+					else
+					{
+						x = tmpX;
+						y = tmpY;
+						if (changeSide)
+						{
+							heading = nextHeading;
+							currentSide = nextSide;
+						}
+					}
+				}
+				else if (heading == up)
+				{
+					//get next position
+					//if we reached side of current face, get next one
+					if (y - 1 < 0)
+					{
+						changeSide = true;
+						nextSide = cubeSideEdges.at(currentSide).at(modulo(heading - mapCube.localToGlobalRotationOffset.at(currentSide), CARDINAL_SIZE));
+						nextHeading = mapCube.edgeDirectionChanges.at(currentSide).at(heading);
+						if (nextHeading == right) { tmpX = 0; tmpY = x; }
+						else if (nextHeading == left) { tmpX = delta - 1; tmpY = delta - 1 -x; }
+						else if (nextHeading == up) { tmpX = x; tmpY = delta - 1; }
+						else { tmpX = delta - 1 - x; tmpY = 0; } //down
+					}
+					//continue on current face
+					else
+					{
+						tmpX = x;
+						tmpY = y - 1;
+					}
+
+					//check if next position is allowed, else stop walking
+					if (mapCube.cubeFaces.at(nextSide)[tmpY][tmpX] == '#')
+					{
+						nextSide = currentSide;
+						break;
+					}
+					else
+					{
+						x = tmpX;
+						y = tmpY;
+						if (changeSide)
+						{
+							heading = nextHeading;
+							currentSide = nextSide;
+						}
+					}
+					
+				}
+				else if (heading == down)
+				{
+					//get next position
+					//if we reached side of current face, get next one
+					if (y + 1 == delta)
+					{
+						changeSide = true;
+						nextSide = cubeSideEdges.at(currentSide).at(modulo(heading - mapCube.localToGlobalRotationOffset.at(currentSide), CARDINAL_SIZE));
+						nextHeading = mapCube.edgeDirectionChanges.at(currentSide).at(heading);
+						if (nextHeading == right) { tmpX = 0; tmpY = delta - 1 - x; }
+						else if (nextHeading == left) { tmpX = delta - 1; tmpY = x; }
+						else if (nextHeading == up) { tmpX = delta - 1 - x ; tmpY = delta - 1; }
+						else { tmpX = x; tmpY = 0; } //down
+					}
+					//continue on current face
+					else
+					{
+						tmpX = x;
+						tmpY = y + 1;
+					}
+
+					//check if next position is allowed, else stop walking
+					if (mapCube.cubeFaces.at(nextSide)[tmpY][tmpX] == '#')
+					{
+						nextSide = currentSide;
+						break;
+					}
+					else
+					{
+						x = tmpX;
+						y = tmpY;
+						if (changeSide)
+						{
+							heading = nextHeading;
+							currentSide = nextSide;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	xglobal = get<0>(mapCube.cubeFaceCoordinateOffset.at(currentSide)) + x;
+	yglobal = get<1>(mapCube.cubeFaceCoordinateOffset.at(currentSide)) + y;
+
+	std::cout << xglobal << " " << yglobal <<" " << heading << "\n";
+	return (1000ll * (yglobal + 1) + 4 * (xglobal + 1) + heading);
+}
+
 long long walkMap(const std::vector<std::string>& map, const std::vector<std::variant<int, char>>& directions)
 {
 	int x = 0, //x increases right
@@ -378,9 +583,10 @@ int main()
 	//std::cout << "Final password (test) is: " << walkMap(testMap, testDirections) << "\n";
 	//std::cout << "Final password (puzzle) is: " << walkMap(map, directions) << "\n";
 
-	std::cout << testMap.size() << " " << testMap.at(0).size() << "\n";
-	std::cout << std::gcd(testMap.size(), testMap.at(0).size()) << "\n";
-	std::cout << std::gcd(map.size(), map.at(0).size()) << "\n";
+	//Cube testCube = createCubeFromMap(testMap,0);
+	//std::cout << walkCube(testCube, testDirections) << '\n';
+	Cube puzzleCube = createCubeFromMap(map, 1);
+	std::cout << walkCube(puzzleCube, directions) << '\n';
 
 
 	return 0;
