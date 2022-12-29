@@ -9,8 +9,11 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <tuple>
 
 #include <cstdlib>
+#include <regex>
+#include <format>
 
 struct Monkey
 {
