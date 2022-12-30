@@ -17,6 +17,16 @@ Tile::Tile(tileShapes tileShape, std::tuple<int, int> position)
 	createTileShape();
 }
 
+Tile::Tile(const Tile &other)
+{
+	if (this != &other)
+	{
+		this->position = other.position;
+		this->tileShape = other.tileShape;
+		this->shape = other.shape;
+	}
+}
+
 void Tile::moveTile(directions direction)
 {
 	switch (direction)

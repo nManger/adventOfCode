@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <tuple>
-//#include "board.h"
 
 enum directions
 {
@@ -32,7 +31,7 @@ public:
 
 	Tile(); //create hBar tile at (0,0)
 	Tile(tileShapes tileShape, std::tuple<int, int> position);
-
+	Tile(const Tile &other);
 
 	void moveTile(directions direction);
 	std::tuple<int, int> getTilePosition();

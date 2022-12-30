@@ -19,9 +19,12 @@ public:
 
 	int getTileStackHeight();
 	std::vector<Tile> getAllTiles();
+	Tile getCurrentTile();
 
 	void createNextTile();
 	bool moveCurrentTile(directions direction);
+
+	void printBoard();
 
 private:
 	bool checkTileCanMove(directions direction);

@@ -17,6 +17,47 @@ std::vector<Tile> TetrisBoard::getAllTiles()
 	return tilesOnBoard;
 }
 
+Tile TetrisBoard::getCurrentTile()
+{
+	return Tile(currentTile);
+}
+
+void TetrisBoard::printBoard()
+{
+	
+
+	std::vector<std::vector<char>> board;
+	for (int i= 0; i<7;i++)
+	{
+		board.push_back(std::vector<char>(maxTileHeight+1, '.'));
+	}
+
+
+	for (auto it = tilesOnBoard.begin(); it != tilesOnBoard.end(); ++it)
+	{
+		std::vector<std::tuple<int, int>> piecePos = (*it).getTilePiecesPositions();
+		for (auto [x, y] : piecePos)
+		{
+			board.at(x).at(y) = '#';
+		}
+	}
+
+	int row = 0;
+	//print board
+	for (int j = board.at(0).size()-1; j >=0 ; --j)
+	{
+		row = 0;
+		for (int i = 0; i < 7; ++i)
+		{
+			//if (board.at(i).at(j) == '#') ++row;
+			std::cout << board.at(i).at(j);
+		}
+		//if (row == 7) std::cout << j <<"\n";
+		if ((j + 1) % 40 == 0) std::cout << " xxx";
+		std::cout << "\n";
+	}
+}
+
 void TetrisBoard::createNextTile()
 {
 	//put old resting tile on stack
@@ -76,7 +117,7 @@ bool TetrisBoard::checkTileCanMove(directions direction)
 	{
 		*it = { get<0>((*it)) + deltaX , get<1>((*it))+deltaY };
 	}
-
+	
 	for (auto it = tilesOnBoard.rbegin(); it!= tilesOnBoard.rend(); ++it )
 	{
 		auto [xOther,yOther] = it->getTilePosition();
