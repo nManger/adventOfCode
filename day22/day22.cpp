@@ -3,6 +3,7 @@
 
 #include "day22.h"
 
+using CubeList = std::vector<std::tuple<std::vector<std::string>, std::vector<std::variant<int, char>>>>;
 
 int modulo(int a, int b)
 {
@@ -10,46 +11,73 @@ int modulo(int a, int b)
 	return r < 0 ? r + b : r;
 }
 
-std::tuple<std::vector<std::string>, std::vector<std::variant<int,char>>> readPuzzleInput(std::string filename)
+CubeList readPuzzleInput(std::string filename)
 {
+	CubeList allCubes;
 	std::vector<std::string> map;
 	std::vector<std::variant<int, char>> directions;
-	int deltaX = 0; 
 
 	std::string line;
 	std::ifstream myFile(filename);
 
 	if (myFile.is_open())
 	{
-		//read map part of file
-		getline(myFile, line);
-		while (!line.empty() && !myFile.eof())
+		while (!myFile.eof())
 		{
-			map.push_back(line);
-			//keep track of largest line size for padding later
-			if (line.size() > deltaX) deltaX = line.size();
+			//clear map and directions
+			map.clear();
+			directions.clear();
 
+			//read map part 
+			int deltaX = 0;
+			getline(myFile, line);
+			while (!line.empty())
+			{
+				map.push_back(line);
+				//keep track of largest line size for padding later
+				if (line.size() > deltaX) deltaX = line.size();
+
+				getline(myFile, line);
+			}
+
+			//pad rows to max map witdh
+			for (std::string& row : map)
+			{
+				row.append(std::string(deltaX - row.size(), ' '));
+			}
+
+			//read directions part 
+			getline(myFile, line);
+
+			//process directions
+			//make regex pattern for R/L turns and search for matches and non matches independently
+			std::regex pattern = std::regex(R"([RL])");
+
+			auto matchIterator = std::sregex_token_iterator(line.begin(), line.end(), pattern, 0);
+			auto nonMatchIterator = std::sregex_token_iterator(line.begin(), line.end(), pattern, -1);
+
+			std::variant<int, char> placeholder;
+			while (matchIterator != std::sregex_token_iterator())
+			{
+				placeholder = stoi(nonMatchIterator->str());
+				directions.push_back(placeholder);
+				placeholder = matchIterator->str()[0];
+				directions.push_back(placeholder);
+				++nonMatchIterator;
+				++matchIterator;
+			}
+			//if there is a final distance after last turn, get it
+			if (nonMatchIterator != std::sregex_token_iterator())
+			{
+				directions.push_back(stoi(nonMatchIterator->str()));
+			}
+
+			//save cube and directions
+			allCubes.push_back({ map,directions });
+			
+			//get empty line after directions
 			getline(myFile, line);
 		}
-
-		getline(myFile, line);
-
-		std::regex pattern = std::regex(R"([RL])");
-
-		auto matchIterator = std::sregex_token_iterator(line.begin(), line.end(), pattern, 0);
-		auto nonMatchIterator = std::sregex_token_iterator(line.begin(), line.end(), pattern, -1);
-
-		std::variant<int, char> placeholder;
-		while (matchIterator != std::sregex_token_iterator())
-		{
-			placeholder = stoi(nonMatchIterator->str());
-			directions.push_back(placeholder);
-			placeholder = matchIterator->str()[0];
-			directions.push_back(placeholder);
-			++nonMatchIterator;
-			++matchIterator;
-		}
-		directions.push_back(stoi(nonMatchIterator->str()));
 
 		myFile.close();
 	}
@@ -58,14 +86,8 @@ std::tuple<std::vector<std::string>, std::vector<std::variant<int,char>>> readPu
 		std::cout << "Could not open file " + filename + ".\n";
 		exit(1);
 	}
-	
-	//pad rows to max map witdh
-	for (std::string& row : map)
-	{
-		row.append(std::string(deltaX - row.size(), ' '));
-	}
 
-	return { map,directions };
+	return allCubes;
 }
 
 std::vector<std::string> getCubeFace(const std::vector<std::string> &map, int x, int y, int delta)
@@ -294,7 +316,6 @@ Cube createCubeFromMap(std::vector<std::string> map)
 	return puzzleCube;
 }
 
-
 long long walkCube(const Cube& mapCube, const std::vector<std::variant<int, char>>& directions)
 {
 	auto [xglobal, yglobal] = mapCube.cubeFaceCoordinateOffset[Top];
@@ -483,7 +504,7 @@ long long walkCube(const Cube& mapCube, const std::vector<std::variant<int, char
 	xglobal = get<0>(mapCube.cubeFaceCoordinateOffset.at(currentSide)) + x;
 	yglobal = get<1>(mapCube.cubeFaceCoordinateOffset.at(currentSide)) + y;
 
-	std::cout <<"(" << xglobal + 1 << " " << yglobal + 1 << " " << heading << ") ";
+	//std::cout <<"(" << xglobal + 1 << " " << yglobal + 1 << " " << heading << ") ";
 	return (1000ll * (yglobal + 1) + 4 * (xglobal + 1) + heading);
 }
 
@@ -569,14 +590,31 @@ long long walkMap(const std::vector<std::string>& map, const std::vector<std::va
 		}
 	}
 	
-	std::cout <<"("<< x + 1 << " " << y + 1 << " " << heading << ") ";
+	//std::cout <<"("<< x + 1 << " " << y + 1 << " " << heading << ") ";
 	return (1000ll*(y+1) + 4*(x+1) + heading);
+}
+
+void printCube(const Cube& cube)
+{
+	for (int i = 0; i < 6; ++i)
+	{
+		std::cout << "Side: " << i << " Offset: " << cube.localToGlobalRotationOffset[i];
+		std::cout << " x: " << get<0>(cube.cubeFaceCoordinateOffset.at(i)) << " y: " << get<1>(cube.cubeFaceCoordinateOffset.at(i)) << "\n";
+		std::cout << "Next Side/Heading : ";
+		for (auto [side, heading] : cube.edgeDirectionChanges.at(i))
+		{
+			std::cout << side << "/" << heading << " ";
+		}
+		std::cout << "\n";
+	}
 }
 
 int main()
 {
-	auto [testMap, testDirections] = readPuzzleInput("puzzleTest.txt");
-	auto [map, directions] = readPuzzleInput("puzzleInput.txt");
+	CubeList cubeList = readPuzzleInput("puzzleTest.txt");
+	auto [testMap, testDirections] = cubeList.at(0);
+	cubeList = readPuzzleInput("puzzleInput.txt");
+	auto [map, directions] = cubeList.at(0);
 	
 	std::cout << "Part 1:\n";
 	std::cout << "Final password (test) is: " << walkMap(testMap, testDirections) << "\n";
@@ -585,24 +623,22 @@ int main()
 	Cube testCube = createCubeFromMap(testMap);
 	Cube puzzleCube = createCubeFromMap(map);
 
-	std::cout << "Part 2:\n";
+	std::cout << "\nPart 2:\n";
 	std::cout << "Final password (test) is: " << walkCube(testCube, testDirections) << "\n";
 	std::cout << "Final password (puzzle) is: " << walkCube(puzzleCube, directions) << "\n";
 	
-	//write out cube structure
-	/*
-	Cube testCube = createCubeFromMap(map);
-	for (int i = 0; i < 6; ++i)
+	cubeList = readPuzzleInput("puzzleInput_part3.txt");
+	long long cubeSum = 0;
+	std::cout << "\nPart 3:\n";
+	for (auto it = cubeList.begin(); it != cubeList.end(); ++it)
 	{
-		std::cout << "Side: " << i << " Offset: " << testCube.localToGlobalRotationOffset[i];
-		std::cout << " x: "<< get<0>(testCube.cubeFaceCoordinateOffset.at(i))<< " y: " << get<1>(testCube.cubeFaceCoordinateOffset.at(i)) << "\n";
-		std::cout << "Next Side/Heading : ";
-		for (auto [side,heading]: testCube.edgeDirectionChanges.at(i))
-		{
-			std::cout << side << "/" << heading << " ";
-		}
-		std::cout << "\n";
-	}*/
+		auto& [map, directions] = *it;
+		Cube cube = createCubeFromMap(map);
+		long long n = walkCube(cube, directions);
+		cubeSum += n;
+		//std::cout << n << " ";
+	}
+	std::cout << "Final password (puzzle) is: " << cubeSum << "\n";
 
 	return 0;
 }
